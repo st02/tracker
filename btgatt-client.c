@@ -46,47 +46,20 @@
 #include "shared/gatt-db.h"
 #include "shared/gatt-client.h"
 
+#include "btgatt-client.h"
+#include "acq.h"
+
 #define ATT_CID 4
-
-#define PRLOG(...) \
-	printf(__VA_ARGS__); print_prompt();
-
-#define COLOR_OFF	"\x1B[0m"
-#define COLOR_RED	"\x1B[0;91m"
-#define COLOR_GREEN	"\x1B[0;92m"
-#define COLOR_YELLOW	"\x1B[0;93m"
-#define COLOR_BLUE	"\x1B[0;94m"
-#define COLOR_MAGENTA	"\x1B[0;95m"
-#define COLOR_BOLDGRAY	"\x1B[1;30m"
-#define COLOR_BOLDWHITE	"\x1B[1;37m"
 
 
 
 static bool verbose = false;
 
-
-FILE *fp;
-static float dt = 1000;
-static float in_curr[3]={0.f,0.f,0.f};
-static float in_prev[3]={0.F,0.F,0.F};
-static float out_curr[3]={0.F,0.F,0.F};
-static float out_prev[3]={0.F,0.F,0.F};
-static int time;
-
-
-struct client {
-	int fd;
-	struct bt_att *att;
-	struct gatt_db *db;
-	struct bt_gatt_client *gatt;
-
-	unsigned int reliable_session_id;
-};
-
-static void print_prompt(void)
+void print_prompt(void)
 {
-	printf(COLOR_BLUE "[GATT client]" COLOR_OFF "# ");
-	fflush(stdout);
+//	printf(COLOR_BLUE "[GATT client]" COLOR_OFF "# ");
+
+//	fflush(stdout);
 }
 
 static const char *ecode_to_string(uint8_t ecode)
@@ -367,8 +340,6 @@ static void print_services_by_handle(struct client *cli, uint16_t handle)
 }
 
 
-static void my_ready_cb(bool success, uint8_t att_ecode, void *user_data);
-
 static void ready_cb(bool success, uint8_t att_ecode, void *user_data)
 {
 	struct client *cli = user_data;
@@ -381,8 +352,8 @@ static void ready_cb(bool success, uint8_t att_ecode, void *user_data)
 
 	PRLOG("GATT discovery procedures complete\n");
 
-	print_services(cli);
-	print_prompt();
+//	print_services(cli);
+//	print_prompt();
 
 
 	my_ready_cb(success,att_ecode,user_data);
@@ -490,8 +461,9 @@ static void read_multiple_cb(bool success, uint8_t att_ecode,
 		const uint8_t *value, uint16_t length,
 		void *user_data)
 {
+    my_read_multiple_cb(value);
+/*
 	int i;
-
 	if (!success) {
 		PRLOG("\nRead multiple request failed: 0x%02x\n", att_ecode);
 		return;
@@ -499,13 +471,15 @@ static void read_multiple_cb(bool success, uint8_t att_ecode,
 
 	printf("\nRead multiple value (%u bytes):", length);
 
-	for (i = 0; i < length; i++)
-		printf("%02x ", value[i]);
+	//for (i = 0; i < length; i++)
+	//	printf("%02x ", value[i]);
 
-	PRLOG("\n");
+	//PRLOG("\n");
+*/
 }
 
-static void cmd_read_multiple(struct client *cli, char *cmd_str)
+
+void cmd_read_multiple(struct client *cli, char *cmd_str)
 {
 	int argc = 0;
 	uint16_t *value;
@@ -560,7 +534,8 @@ static void read_cb(bool success, uint8_t att_ecode, const uint8_t *value,
 				ecode_to_string(att_ecode), att_ecode);
 		return;
 	}
-
+    return;
+/*
 	printf("\nRead value");
 
 	if (length == 0) {
@@ -574,9 +549,10 @@ static void read_cb(bool success, uint8_t att_ecode, const uint8_t *value,
 		printf("%02x ", value[i]);
 
 	PRLOG("\n");
+*/
 }
 
-static void cmd_read_value(struct client *cli, char *cmd_str)
+void cmd_read_value(struct client *cli, char *cmd_str)
 {
 	char *argv[2];
 	int argc = 0;
@@ -587,7 +563,6 @@ static void cmd_read_value(struct client *cli, char *cmd_str)
 		printf("GATT client not initialized\n");
 		return;
 	}
-
 	if (!parse_args(cmd_str, 1, argv, &argc) || argc != 1) {
 		read_value_usage();
 		return;
@@ -671,7 +646,7 @@ static void write_cb(bool success, uint8_t att_ecode, void *user_data)
 	}
 }
 
-static void cmd_write_value(struct client *cli, char *cmd_str)
+void cmd_write_value(struct client *cli, char *cmd_str)
 {
 	int opt, i;
 	char *argvbuf[516];
@@ -1114,82 +1089,6 @@ static void register_notify_usage(void)
 	printf("Usage: register-notify <chrc value handle>\n");
 }
 
-static void inline by_pass(const float alpha)
-{
-	for(int i=0;i<3;i++)	
-		out_curr[i]=alpha*in_curr[i];
-}
-
-static void inline low_pass(const float alpha)
-{
-	for(int i=0;i<3;i++)	
-		out_curr[i]=alpha*in_curr[i]+(1-alpha)*out_prev[i];
-}
-
-static void inline high_pass(const float alpha)
-{
-	for(int i=0;i<3;i++)	
-		out_curr[i]=alpha*out_prev[i]+alpha*(in_curr[i]-in_prev[i]);
-}
-static void compute_distance(const float *vals)
-{
-
-	float alpha = 0.8;
-	float linear_acc[3];
-        int tc=10;
-	for(int i=0;i<3;i++)	
-		in_curr[i]=vals[i];
-#define FILTER
-#ifndef FILTER
-	if(time < tc) 
-	{	
-		gravity[0]+=x/tc;
-		gravity[1]+=y/tc;
-		gravity[2]+=z/tc;
-                return;
-	}
-#else
-	low_pass(0.8);
-	//high_pass(0.3);
-#endif
-	for(int i=0;i<3;i++)	
-		out_prev[i]=out_curr[i];
-	
-	float gt=0.5*dt*dt;
-	float dx=out_curr[0];
-	float dy=out_curr[1];
-	float dz=out_curr[2];
-	fprintf(fp,"%d %f %f %f \n",time ,dx,dy,dz);
-	printf("\tvals = %d %f %f %f \n",time,dx,dy,dz);
-	time++;
-}
-
-static void notify_cb(uint16_t value_handle, const uint8_t *value,
-		uint16_t length, void *user_data)
-{
-	int i;
-
-	if (length == 0) {
-		PRLOG("(0 bytes)\n");
-		return;
-	}
-
-	if(value_handle==0x2d)
-	{
-		float vals[3];
-		vals[0]=((int8_t)value[0] * 1.) / 64;
-		vals[1]=((int8_t)value[1] * 1.) / 64;
-		vals[2]=((int8_t)value[2] * 1.) / 64;
-		compute_distance(vals);
-		return;
-	}
-
-	printf("(%u bytes): ", length);
-	printf("\n\tHandle Value Not/Ind: 0x%04x - ", value_handle);
-	for (i = 0; i < length; i++)
-		printf("%02x ", value[i]);
-	PRLOG("\n");
-}
 
 static void register_notify_cb(uint16_t att_ecode, void *user_data)
 {
@@ -1202,7 +1101,7 @@ static void register_notify_cb(uint16_t att_ecode, void *user_data)
 	PRLOG("Registered notify handler!");
 }
 
-static void cmd_register_notify(struct client *cli, char *cmd_str)
+void cmd_register_notify(struct client *cli, char *cmd_str)
 {
 	char *argv[2];
 	int argc = 0;
@@ -1593,38 +1492,6 @@ static struct option main_options[] = {
 	{ "help",		0, 0, 'h' },
 	{ }
 };
-
-
-
-static void my_ready_cb(bool success, uint8_t att_ecode, void *user_data)
-{
-
-
-	struct client *cli = user_data;
-	//cmd_read_value (cli,"0x2e");
-	//cmd_read_value (cli,"0x31");
-	char cmd[512]="0x2e 01 00";
-	cmd_write_value(cli,cmd);
-	cmd_read_value (cli,"0x2e");
-
-
-	int mult=10;
-	dt=mult*10; // ms
-	sprintf(cmd,"0x34 %d",mult);
-	cmd_write_value(cli,cmd);
-	cmd_read_value (cli,"0x34");
-
-	strcpy(cmd,"0x31 01"); 
-	cmd_write_value(cli,cmd);
-	cmd_read_value (cli,"0x31");
-
-	memset(cmd,0,512);
-	strcpy(cmd,"0x2d"); 
-	cmd_register_notify(cli,cmd);
-
-}
-
-
 
 int main(int argc, char *argv[])
 {

@@ -1,17 +1,10 @@
+tracker:btgatt-client.c shared/libblhelper.a acq.c acq.h
+	gcc -std=gnu99 btgatt-client.c acq.c -o $@ -L./shared/ -lblhelper -lbluetooth
 
-
-
-
-
-
-
-btgatt-client:btgatt-client.c shared/libblhelper.a
-	gcc btgatt-client.c -o $@ -L./shared/ -lblhelper -lbluetooth
-
-shared/libblhelper.a: shared/*.o
+shared/libblhelper.a: 
 	cd shared && $(MAKE)
 clean:
-	rm -rf btgatt-client
+	rm -rf tracker
 	cd shared && $(MAKE) clean    
 
 
