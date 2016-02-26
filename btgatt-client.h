@@ -10,8 +10,8 @@
 #define COLOR_BOLDGRAY	"\x1B[1;30m"
 #define COLOR_BOLDWHITE	"\x1B[1;37m"
 
-#define PRLOG(...) \
-	printf(__VA_ARGS__); print_prompt();
+///#define PRLOG(...) printf(__VA_ARGS__); print_prompt();
+#define PRLOG(...) 
 
 struct client {
 	int fd;

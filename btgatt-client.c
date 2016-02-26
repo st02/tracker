@@ -57,9 +57,8 @@ static bool verbose = false;
 
 void print_prompt(void)
 {
-//	printf(COLOR_BLUE "[GATT client]" COLOR_OFF "# ");
-
-//	fflush(stdout);
+	//printf(COLOR_BLUE "[GATT client]" COLOR_OFF "# ");
+	//fflush(stdout);
 }
 
 static const char *ecode_to_string(uint8_t ecode)

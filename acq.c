@@ -37,14 +37,14 @@ void my_ready_cb(bool success, uint8_t att_ecode, void *user_data)
     // configure gyro
     memset(cmd,0,512);
     // notification not needed 
-    strcpy(cmd,"0x58 01 00");
-    cmd_write_value(cli,cmd);
+ //   strcpy(cmd,"0x58 01 00");
+ //   cmd_write_value(cli,cmd);
     // cmd_read_value (cli,"0x58");
 
     // measure all dir: 
     strcpy(cmd,"0x5b 07");
     cmd_write_value(cli,cmd);
-    cmd_read_value (cli,"0x5b");
+//    cmd_read_value (cli,"0x5b");
 
     strcpy(cmd,"0x2d 0x57");
     cmd_read_multiple(cli,cmd);
@@ -91,13 +91,10 @@ static void compute_distance(const float *vals,void * user_data)
     float dz=out_curr[2];
     fprintf(fp,"%d %f %f %f \n",time ,dx,dy,dz);
     printf("\tvals = %d %f %f %f \n",time,dx,dy,dz);
-    // read gyro
-    // struct client *cli = user_data;
-    // cmd_read_value (cli,"0x57");
     time++;
 }
 
-void call_me(void *user_data)
+void call_me()
 {
     char cmd[512];
     strcpy(cmd,"0x2d 0x57");
@@ -106,24 +103,11 @@ void call_me(void *user_data)
 
 void notify_cb(uint16_t value_handle, const uint8_t *value, uint16_t length, void *user_data)
 {
-    int i;
-//    if (length == 0) {
-//        PRLOG("(0 bytes)\n");
-//        return;
-//    }
-    call_me(user_data);
-    return;
-    if(value_handle==0x2d)
-    {
-//    float vals[3];
-//    vals[0]=((int8_t)value[0] * 1.) / 64;
-//    vals[1]=((int8_t)value[1] * 1.) / 64;
-//    vals[2]=((int8_t)value[2] * 1.) / 64;
-//    compute_distance(vals,user_data);
-//    return;
-    }
+    call_me();
 }
-typedef struct sensor_data{
+
+#pragma pack(1)
+struct sensor_data{
     int8_t acc_raw[3];
     int16_t gyro_raw[3];
 }sensor_data;
@@ -131,17 +115,17 @@ typedef struct sensor_data{
 void my_read_multiple_cb(const void*value)
 {
     
-    const sensor_data *data=value;
-     
+    const struct sensor_data *data=value;
     float acc[3];
     acc[0]=(data->acc_raw[0] * 1.) / 64;
     acc[1]=(data->acc_raw[1] * 1.) / 64;
     acc[2]=(data->acc_raw[2] * 1.) / 64;
     float gyro[3];
-    gyro[0]=(data->gyro_raw[3] * 1.0) / (65536/ 500); 
-    gyro[1]=(data->gyro_raw[4] * 1.0) / (65536/ 500); 
-    gyro[2]=(data->gyro_raw[5] * 1.0) / (65536/ 500); 
-    printf("%f %f %f--- %f %f %f \n",acc[0],acc[1],acc[2],gyro[0],gyro[1],gyro[2]);
+    gyro[0]=(data->gyro_raw[0] * 1.0) / (65536/ 500); 
+    gyro[1]=(data->gyro_raw[1] * 1.0) / (65536/ 500); 
+    gyro[2]=(data->gyro_raw[2] * 1.0) / (65536/ 500); 
+    fprintf(fp,"%d %f %f %f %f %f %f \n",time++,acc[0],acc[1],acc[2],gyro[0],gyro[1],gyro[2]);
+    printf("%d %f %f %f %f %f %f \n",time++,acc[0],acc[1],acc[2],gyro[0],gyro[1],gyro[2]);
 }
 
 
