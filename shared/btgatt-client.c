@@ -37,17 +37,21 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_lib.h>
 #include <bluetooth/l2cap.h>
-#include "shared/uuid_new.h"
+#include "uuid_new.h"
 
-#include "shared/mainloop.h"
-#include "shared/util.h"
-#include "shared/att.h"
-#include "shared/queue.h"
-#include "shared/gatt-db.h"
-#include "shared/gatt-client.h"
+#include "mainloop.h"
+#include "util.h"
+#include "att.h"
+#include "queue.h"
+#include "gatt-db.h"
+#include "gatt-client.h"
 
 #include "btgatt-client.h"
-#include "acq.h"
+extern void my_ready_cb(bool success, uint8_t att_ecode, void *user_data);
+extern void notify_cb(uint16_t value_handle, const uint8_t *value, uint16_t length, void *user_data);
+extern void my_read_multiple_cb(const void *value);
+
+//#include "acq.h"
 
 #define ATT_CID 4
 
@@ -1492,7 +1496,7 @@ static struct option main_options[] = {
 	{ }
 };
 
-int main(int argc, char *argv[])
+int main_gatt(int argc, char *argv[])
 {
 	int opt;
 	int sec = BT_SECURITY_LOW;
@@ -1504,9 +1508,7 @@ int main(int argc, char *argv[])
 	int fd;
 	sigset_t mask;
 	struct client *cli;
-
-	str2ba("5C:31:3E:BF:FA:77", &dst_addr);
-	fp=fopen("out.dat","w");
+ 
 	while ((opt = getopt_long(argc, argv, "+hvs:m:t:d:i:",
 					main_options, NULL)) != -1) {
 		switch (opt) {

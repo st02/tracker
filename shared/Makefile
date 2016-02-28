@@ -4,7 +4,7 @@ CFLAGS=-I./ -I/usr/include/bluetooth
 
 LIBS=-lbluetooth
 
-OBJ = mainloop.o gatt-client.o gatt-helpers.o gatt-db.o att.o crypto.o io-mainloop.o uuid_new.o queue.o util.o timeout-mainloop.o
+OBJ = btgatt-client.o mainloop.o gatt-client.o gatt-helpers.o gatt-db.o att.o crypto.o io-mainloop.o uuid_new.o queue.o util.o timeout-mainloop.o
 
 
 %.o: %.c 

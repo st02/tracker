@@ -27,6 +27,7 @@ void cmd_write_value(struct client *cli, char *cmd_str);
 void cmd_read_value(struct client *cli, char *cmd_str);
 void cmd_register_notify(struct client *cli, char *cmd_str);
 void cmd_read_multiple(struct client *cli, char *cmd_str);
+int main_gatt(int argc,char *argv[]);
 FILE *fp;
 
 #endif
